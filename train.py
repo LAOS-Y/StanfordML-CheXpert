@@ -64,7 +64,7 @@ for i in range(NUM_EPOCH):
     
     solver.save_model("Epoch#{}.th".format(i + 1), verbose=args.verbose)
     
-    if (len(self.loss_val_list) > 1) and (self.loss_val_list[-2] < self.loss_val_list[-1]):
+    if (len(solver.loss_val_list) > 1) and (solver.loss_val_list[-2] < solver.loss_val_list[-1]):
         solver.update_lr(verbose=args.verbose)
 
 with open(LOG_DIR + "log.txt", mode="a") as file:
