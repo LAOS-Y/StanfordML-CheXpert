@@ -18,7 +18,7 @@ class ChestXray14(Dataset):
         if trm == None:
             self.trm = transforms.ToTensor()
         else:
-            self.trm = trm
+            self.trm = transforms.Compose([trm, transforms.ToTensor()])
             
         self.trm = transforms.Compose([trm_resize, self.trm, trm_norm])
         

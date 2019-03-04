@@ -20,7 +20,7 @@ class Solver():
         self.optimizer = optimizer
         self.scheduler = scheduler
         
-    def optimize(self, verbose=True):
+    def optimize(self, verbose=False):
         cur_loss_train = 0
         ds_len = 0
         
@@ -49,7 +49,7 @@ class Solver():
             if verbose:
                 print("Train loss: {}".format(cur_loss_train))
 
-    def validate(self, verbose=True):
+    def validate(self, verbose=False):
         cur_loss_val = 0
         ds_len = 0
         
@@ -72,14 +72,16 @@ class Solver():
             if verbose:
                 print("Val loss: {}".format(cur_loss_val))
         
-    def save_model(self, filename, verbose=True):
+    def save_model(self, filename, verbose=False):
+        torch.save(self.net.state_dict(), self.log_path + filename)
+        
         with open(self.log_path+ "log.txt", mode="a") as file:
-            torch.save(self.net.state_dict(), self.log_path + filename)
             print("Weights saved as {}".format(self.log_path + filename), file=file)
+        if verbose:
             print("Weights saved as {}".format(self.log_path + filename))
         
         
-    def update_lr(self, verbose=True):
+    def update_lr(self, verbose=False):
         with open(self.log_path+ "log.txt", mode="a") as file:
             self.scheduler.step()
             
@@ -90,7 +92,7 @@ class Solver():
                 if verbose:
                     print("Learning rate decayed to {}".format(cur_lr))
         
-    def plot_loss(self, filename, dpi=200, show=False, verbose=True):
+    def plot_loss(self, filename, dpi=200, show=False, verbose=False):
         plt.rcParams["figure.dpi"] = dpi
 
         plt.xlabel("Epoch")
@@ -116,7 +118,7 @@ class Solver():
             if verbose:
                 print("Loss Plotted at {}".format(self.log_path + filename))
             
-    def save_loss_csv(self, filename, verbose=True):
+    def save_loss_csv(self, filename, verbose=False):
         df = pd.DataFrame({"Epoch": np.arange(len(self.loss_train_list)) + 1,
                            "Loss_train": self.loss_train_list,
                            "Loss_val": self.loss_val_list,
