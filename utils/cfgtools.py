@@ -49,8 +49,6 @@ def getDataset(ds_dict):
                                     mean=ds_dict["NORM"]["MEAN"],
                                     std=ds_dict["NORM"]["STD"])
     
-    elif ==[]
-    
     else:
         assert False, "wrong DATASET name: {}".format(ds_dict["NAME"])
     
