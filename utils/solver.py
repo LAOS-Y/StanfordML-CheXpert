@@ -3,8 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from .logwriter import LogWriter
+
 class Solver():
-    def __init__(self, net, dl_train, dl_val, loss_fn, optimizer, scheduler, log_path):
+    def __init__(self, net, dl_train, dl_val, loss_fn, optimizer, scheduler, log_path, log_file):
         self.loss_train_list = []
         self.loss_val_list = []
         self.lr_list = []
@@ -15,6 +17,7 @@ class Solver():
         self.net = net
         
         self.log_path = log_path
+        self.log_writer = LogWriter(log_file)
         
         self.loss_fn = loss_fn
         self.optimizer = optimizer
@@ -26,71 +29,63 @@ class Solver():
         
         self.net.train()
         
-        with open(self.log_path+ "log.txt", mode="a") as file:
-            for img, label in self.dl_train:
-                img = img.cuda()
-                label = label.cuda()
-                pred = self.net(img)
-                loss = self.loss_fn(pred, label)
-                
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
-
-                loss_np = loss.detach().cpu().numpy()
-                cur_loss_train = cur_loss_train + loss_np * img.shape[0]
-                ds_len += img.shape[0]
-    
-            cur_loss_train /= ds_len
-            self.loss_train_list.append(cur_loss_train)
-            self.lr_list.append(self.optimizer.param_groups[0]['lr'])
+        for img, label in self.dl_train:
+            img = img.cuda()
+            label = label.cuda()
+            pred = self.net(img)
+            loss = self.loss_fn(pred, label)
             
-            print("Train loss: {}".format(cur_loss_train), file=file)
-            if verbose:
-                print("Train loss: {}".format(cur_loss_train))
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
 
+            loss_np = loss.detach().cpu().numpy()
+            cur_loss_train = cur_loss_train + loss_np * img.shape[0]
+            ds_len += img.shape[0]
+
+        cur_loss_train /= ds_len
+        self.loss_train_list.append(cur_loss_train)
+        self.lr_list.append(self.optimizer.param_groups[0]['lr'])
+
+        self.log_writer.write(text="Train loss: {}".format(cur_loss_train),
+                              verbose=verbose)
+        
     def validate(self, verbose=False):
         cur_loss_val = 0
         ds_len = 0
         
         self.net.eval()
-        with open(self.log_path+ "log.txt", mode="a") as file:
-            for img, label in self.dl_val:
-                img = img.cuda()
-                label = label.cuda()
-                pred = self.net(img)
-                loss = self.loss_fn(pred, label)
 
-                loss_np = loss.detach().cpu().numpy()
-                cur_loss_val += loss_np * img.shape[0]
-                ds_len += img.shape[0]
+        for img, label in self.dl_val:
+            img = img.cuda()
+            label = label.cuda()
+            pred = self.net(img)
+            loss = self.loss_fn(pred, label)
 
-            cur_loss_val /= ds_len
-            self.loss_val_list.append(cur_loss_val)
+            loss_np = loss.detach().cpu().numpy()
+            cur_loss_val += loss_np * img.shape[0]
+            ds_len += img.shape[0]
 
-            print("Val loss: {}".format(cur_loss_val), file=file)
-            if verbose:
-                print("Val loss: {}".format(cur_loss_val))
+        cur_loss_val /= ds_len
+        self.loss_val_list.append(cur_loss_val)
+
+        self.log_writer.write(text="Val loss: {}".format(cur_loss_val),
+                              verbose=verbose)
         
     def save_model(self, filename, verbose=False):
         torch.save(self.net.state_dict(), self.log_path + filename)
         
-        with open(self.log_path+ "log.txt", mode="a") as file:
-            print("Weights saved as {}".format(self.log_path + filename), file=file)
-        if verbose:
-            print("Weights saved as {}".format(self.log_path + filename))
+        self.log_writer.write(text="Weights saved as {}".format(self.log_path + filename),
+                              verbose=verbose)
         
+    def update_lr(self, metric, verbose=False):
+        pre_lr = self.optimizer.param_groups[0]['lr']
+        self.scheduler.step(metric)
+        cur_lr = self.optimizer.param_groups[0]['lr']
         
-    def update_lr(self, verbose=False):
-        with open(self.log_path+ "log.txt", mode="a") as file:
-            self.scheduler.step()
-            
-            cur_lr = self.optimizer.param_groups[0]['lr']
-            
-            if (len(self.lr_list) == 0) or (cur_lr != self.lr_list[-1]):
-                print("Learning rate decayed to {}".format(cur_lr), file=file)
-                if verbose:
-                    print("Learning rate decayed to {}".format(cur_lr))
+        if cur_lr != pre_lr:
+            self.log_writer.write(text="Learning rate decayed to {}".format(cur_lr),
+                                  verbose=verbose)
         
     def plot_loss(self, filename, dpi=200, show=False, verbose=False):
         plt.rcParams["figure.dpi"] = dpi
@@ -113,10 +108,8 @@ class Solver():
         if show:
             plt.show()
 
-        with open(self.log_path+ "log.txt", mode="a") as file:
-            print("Loss Plotted at {}".format(self.log_path + filename), file=file)
-            if verbose:
-                print("Loss Plotted at {}".format(self.log_path + filename))
+        self.log_writer.write(text="Loss Plotted at {}".format(self.log_path + filename),
+                              verbose=verbose)
             
     def save_loss_csv(self, filename, verbose=False):
         df = pd.DataFrame({"Epoch": np.arange(len(self.loss_train_list)) + 1,
@@ -126,7 +119,5 @@ class Solver():
         
         df.to_csv(self.log_path + filename, index=False)
         
-        with open(self.log_path+ "log.txt", mode="a") as file:
-            print("Loss saved at {}".format(self.log_path + filename), file=file)
-            if verbose:
-                print("Loss saved at {}".format(self.log_path + filename))
+        self.log_writer.write(text="Loss saved at {}".format(self.log_path + filename),
+                              verbose=verbose)

@@ -1,15 +1,13 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+import torchvision.transforms as transforms
 
 # import sys
 # sys.path.append("..")
 
 import data
 import model
-
-import torchvision.transforms as transforms
-
 
 def getTrm(trm_dict):
     if trm_dict["TYPE"] == "ColorJitter":
@@ -105,6 +103,18 @@ def getScheduler(optimizer, sch_dict):
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 
                                                     step_size=sch_dict["STEP_SIZE"],
                                                     gamma=sch_dict["DECAY_RATE"]) 
+    elif sch_dict["NAME"] == "ReduceLROnPlateau":
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                               mode=sch_dict["MODE"],
+                                                               factor=sch_dict["FACTOR"],
+                                                               patience=sch_dict["PATIENCE"],
+                                                               verbose=sch_dict["VERBOSE"],
+                                                               threshold=sch_dict["THRESHOLD"],
+                                                               threshold_mode=sch_dict["THRESHOLD_MODE"],
+                                                               cooldown=sch_dict["COOLDOWN"],
+                                                               min_lr=sch_dict["MIN_LR"],
+                                                               eps=sch_dict["EPS"])
+    
     else:
         assert False, "wrong SCHEDULER name: {}".format(sch_dict["NAME"])
     
