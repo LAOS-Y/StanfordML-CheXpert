@@ -65,7 +65,7 @@ for i in range(NUM_EPOCH):
     solver.update_lr(metric=solver.loss_val_list[-1],
                      verbose=args.verbose)
 
-    if i % CSV_SAVING_MARGIN != 0: 
+    if i % CSV_SAVING_MARGIN == 0: 
         solver.save_loss_csv("loss.csv", verbose=args.verbose)
         solver.plot_loss("loss.jpg", verbose=args.verbose)
 
