@@ -107,6 +107,8 @@ class Solver():
         plt.savefig(self.log_path + "loss.jpg")
         if show:
             plt.show()
+            
+        plt.close("all")
 
         self.log_writer.write(text="Loss Plotted at {}".format(self.log_path + filename),
                               verbose=verbose)

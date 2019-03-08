@@ -4,5 +4,6 @@ class LogWriter():
         
     def write(self, text, verbose):
         print(text, file=self.log_file)
+        self.log_file.flush()
         if verbose:
             print(text)
