@@ -2,11 +2,12 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from sklearn import metrics
 
 from .logwriter import LogWriter
 
 class Solver():
-    def __init__(self, net, dl_train, dl_val, loss_fn, optimizer, scheduler, log_path, log_file):
+    def __init__(self, net, dl_train, dl_val, loss_fn, optimizer, scheduler, log_path, log_file, classes):
         self.loss_train_list = []
         self.loss_val_list = []
         self.lr_list = []
@@ -22,6 +23,8 @@ class Solver():
         self.loss_fn = loss_fn
         self.optimizer = optimizer
         self.scheduler = scheduler
+
+        self.classes = classes
         
     def optimize(self, verbose=False):
         cur_loss_train = 0
@@ -32,8 +35,8 @@ class Solver():
         for img, label in self.dl_train:
             img = img.cuda()
             label = label.cuda()
-            pred = self.net(img)
-            loss = self.loss_fn(pred, label)
+            logit = self.net(img)
+            loss = self.loss_fn(logit, label)
             
             self.optimizer.zero_grad()
             loss.backward()
@@ -55,12 +58,18 @@ class Solver():
         ds_len = 0
         
         self.net.eval()
+        
+        logit_list, label_list = [], []
 
         for img, label in self.dl_val:
             img = img.cuda()
             label = label.cuda()
-            pred = self.net(img)
-            loss = self.loss_fn(pred, label)
+            logit = self.net(img)
+
+            logit_list.append(logit.detach())
+            label_list.append(label.detach())
+
+            loss = self.loss_fn(logit, label)
 
             loss_np = loss.detach().cpu().numpy()
             cur_loss_val += loss_np * img.shape[0]
@@ -72,6 +81,9 @@ class Solver():
         self.log_writer.write(text="Val loss: {}".format(cur_loss_val),
                               verbose=verbose)
         
+        self.pred_val = torch.sigmoid(torch.cat(logit_list, dim=0)).detach()
+        self.label_val = torch.cat(label_list, dim=0).detach()
+
     def save_model(self, filename, verbose=False):
         torch.save(self.net.state_dict(), self.log_path + filename)
         
@@ -87,7 +99,36 @@ class Solver():
             self.log_writer.write(text="Learning rate decayed to {}".format(cur_lr),
                                   verbose=verbose)
         
-    def plot_loss(self, filename, dpi=200, show=False, verbose=False):
+    def plot_roc(self, filename, model_name="", dpi=200, show=False, verbose=False):
+        plt.rcParams["figure.dpi"] = dpi
+        
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+
+        auc_list = []
+
+        for i in range(self.pred_val.shape[1]):
+            fpr, tpr, _ = metrics.roc_curve(y_true=self.label_val[:, i].cpu().numpy(),
+                                            y_score=self.pred_val[:, i].cpu().numpy())
+            
+            auc = metrics.auc(fpr, tpr)
+            plt.plot(fpr, tpr, label = "Class#{}:{} | AUC: {}".format(i, self.classes[i], round(auc, 3)))
+            auc_list.append(auc)
+
+        plt.legend(fontsize="x-small")
+
+        plt.title(model_name + ' MEAN AUROC: {}'.format(round(np.array(auc_list).mean(), 3)))
+
+        plt.savefig(self.log_path + filename)
+        if show:
+            plt.show()
+            
+        plt.close("all")
+
+        self.log_writer.write(text="ROC Plotted at {}".format(self.log_path + filename),
+                              verbose=verbose)
+
+    def plot_loss(self, filename="loss.jpg", dpi=200, show=False, verbose=False):
         plt.rcParams["figure.dpi"] = dpi
 
         plt.xlabel("Epoch")
@@ -104,7 +145,7 @@ class Solver():
 
         plt.legend(fontsize='x-small', loc='center right')
         
-        plt.savefig(self.log_path + "loss.jpg")
+        plt.savefig(self.log_path + filename)
         if show:
             plt.show()
             
@@ -112,7 +153,7 @@ class Solver():
 
         self.log_writer.write(text="Loss Plotted at {}".format(self.log_path + filename),
                               verbose=verbose)
-            
+     
     def save_loss_csv(self, filename, verbose=False):
         df = pd.DataFrame({"Epoch": np.arange(len(self.loss_train_list)) + 1,
                            "Loss_train": self.loss_train_list,

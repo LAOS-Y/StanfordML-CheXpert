@@ -45,9 +45,9 @@ scheduler = utils.getScheduler(optimizer, yml_dict["SCHEDULER"])
 print(scheduler)
 
 NUM_EPOCH = yml_dict["NUM_EPOCH"]
-CSV_SAVING_MARGIN = NUM_EPOCH // 20
+CSV_SAVING_MARGIN = max(NUM_EPOCH // 20, 1)
 
-solver = utils.Solver(net, dl_train, dl_val, loss_fn, optimizer, scheduler, LOG_DIR, log_file)
+solver = utils.Solver(net, dl_train, dl_val, loss_fn, optimizer, scheduler, LOG_DIR, log_file, ds_val.classes)
 
 log_writer.write(text="Start training",
                  verbose=args.verbose)
@@ -61,6 +61,7 @@ for i in range(NUM_EPOCH):
     
     if solver.loss_val_list[-1] <= min(solver.loss_val_list):
         solver.save_model("Epoch#{}.th".format(i + 1), verbose=args.verbose)
+        solver.plot_roc("roc.jpg", model_name=yml_dict["MODEL"]["NAME"], verbose=args.verbose)
     
     solver.update_lr(metric=solver.loss_val_list[-1],
                      verbose=args.verbose)
