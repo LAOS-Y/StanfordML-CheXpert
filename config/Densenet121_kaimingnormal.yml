@@ -1,6 +1,13 @@
 MODEL:
   NAME: "Densenet121"
   NUM_CLASS: 14
+  PRETRAINED: True
+
+  CLASSIFIER_INIT:
+    NAME: "kaiming_normal_"
+    A: 0
+    MODE: 'fan_in'
+    NONLINEARITY: 'leaky_relu'
 
 DATASET:
   - NAME: "ChestXray-NIHCC"
@@ -55,6 +62,6 @@ SCHEDULER:
 
 CUDA_VISIBLE_DEVICES: "4,5,6,7"
 
-LOG_DIR: "train_log/log9/"
+LOG_DIR: "train_log/log10/"
 
 NUM_EPOCH: 500

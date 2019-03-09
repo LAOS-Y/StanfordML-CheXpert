@@ -68,14 +68,38 @@ def getDataloader(ds_train, ds_val, dl_dict):
     
     return dl_train, dl_val
 
-def getModel(model_dict):
-    if model_dict["NAME"] == "Resnet50":
-        net = model.Resnet50(model_dict["NUM_CLASS"]).cuda()
-    elif model_dict["NAME"] == "Densenet121":
-        net = model.Densenet121(model_dict["NUM_CLASS"]).cuda()
-    else:
-        assert False, "wrong MODEL name: {}".format(model_dict["NAME"])
+def getClassifierInit(init_dict):
+    if init_dict["NAME"] == "kaiming_normal_":
+        a = init_dict["A"]
+        mode = init_dict["MODE"]
+        nonlinearity = init_dict["NONLINEARITY"]
+
+        return lambda x: nn.init.kaiming_normal_(x,
+                                                 a=a,
+                                                 mode=mode,
+                                                 nonlinearity=nonlinearity)
+    elif init_dict["NAME"] == "xavier_normal_":
+        gain = init_dict["GAIN"]
     
+        return lambda x: nn.init.xavier_normal_(x,
+                                                gain=gain)
+    else:
+        assert False, "wrong CLASSIFIER_INIT name: {}".format(model_dict["NAME"])
+
+def getModel(model_dict):
+    name = model_dict["NAME"]
+    num_class = model_dict["NUM_CLASS"]
+    pretrained = model_dict["PRETRAINED"]
+
+    classifier_init = getClassifierInit(model_dict["CLASSIFIER_INIT"])
+
+    model_class_dict = {"Resnet50":model.Resnet50,
+                        "Densenet121":model.Densenet121}
+
+    net = model_class_dict[name](num_class=num_class,
+                                 pretrained=pretrained,
+                                 classifier_init=classifier_init).cuda()
+
     net = nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
     return net
 
