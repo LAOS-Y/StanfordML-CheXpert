@@ -18,7 +18,7 @@ class Densenet121(nn.Module):
     def forward(self, x):
         features = self.features(x)
         out = F.relu(features, inplace=True)
-        #out = nn.AdaptiveAvgPool2d(1)(out).view(features.size(0), -1)
-        out = F.avg_pool2d(out, kernel_size=7, stride=1).view(features.size(0), -1)
+        out = nn.AdaptiveAvgPool2d(1)(out).view(features.size(0), -1)
+        #out = F.avg_pool2d(out, kernel_size=7, stride=1).view(features.size(0), -1)
         out = self.classifier(out)
         return out
