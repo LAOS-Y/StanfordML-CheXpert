@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 # import sys
 # sys.path.append("..")
 
-import data
+from .data import *
 import model
 
 def getTrm(trm_dict):
@@ -31,21 +31,21 @@ def getDataset(ds_dict):
         trm = None
     
     if ds_dict["NAME"] == "ChestXray-NIHCC":
-        ds_train = data.ChestXray14(image_dir=ds_dict["IMAGE_DIR"], 
-                                    csv_path=ds_dict["CSV_PATH"], 
-                                    list_path=ds_dict["LIST_PATH_TRAIN"],
-                                    downscale_shape=ds_dict["DOWNSCALE_SHAPE"],
-                                    trm=trm,
-                                    mean=ds_dict["NORM"]["MEAN"],
-                                    std=ds_dict["NORM"]["STD"])
+        ds_train = ChestXray14(image_dir=ds_dict["IMAGE_DIR"], 
+                               csv_path=ds_dict["CSV_PATH"], 
+                               list_path=ds_dict["LIST_PATH_TRAIN"],
+                               downscale_shape=ds_dict["DOWNSCALE_SHAPE"],
+                               trm=trm,
+                               mean=ds_dict["NORM"]["MEAN"],
+                               std=ds_dict["NORM"]["STD"])
     
-        ds_val = data.ChestXray14(image_dir=ds_dict["IMAGE_DIR"], 
-                                    csv_path=ds_dict["CSV_PATH"], 
-                                    list_path=ds_dict["LIST_PATH_VAL"],
-                                    downscale_shape=ds_dict["DOWNSCALE_SHAPE"],
-                                    trm=None,
-                                    mean=ds_dict["NORM"]["MEAN"],
-                                    std=ds_dict["NORM"]["STD"])
+        ds_val = ChestXray14(image_dir=ds_dict["IMAGE_DIR"], 
+                             csv_path=ds_dict["CSV_PATH"], 
+                             list_path=ds_dict["LIST_PATH_VAL"],
+                             downscale_shape=ds_dict["DOWNSCALE_SHAPE"],
+                             trm=None,
+                             mean=ds_dict["NORM"]["MEAN"],
+                             std=ds_dict["NORM"]["STD"])
     
     else:
         assert False, "wrong DATASET name: {}".format(ds_dict["NAME"])

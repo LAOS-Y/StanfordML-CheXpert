@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 
 import utils
-import data
 
 import argparse
 import yaml
@@ -41,8 +40,6 @@ net = utils.getModel(yml_dict["MODEL"])
 loss_fn = utils.getLoss(yml_dict["LOSS"])
 optimizer = utils.getOptimizer(net, yml_dict["OPTIMIZER"])
 scheduler = utils.getScheduler(optimizer, yml_dict["SCHEDULER"])
-
-print(scheduler)
 
 NUM_EPOCH = yml_dict["NUM_EPOCH"]
 CSV_SAVING_MARGIN = max(NUM_EPOCH // 20, 1)
