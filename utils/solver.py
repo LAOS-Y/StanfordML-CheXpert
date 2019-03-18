@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -85,9 +86,10 @@ class Solver():
         self.label_val = torch.cat(label_list, dim=0).detach()
 
     def save_model(self, filename, verbose=False):
-        torch.save(self.net.state_dict(), self.log_path + filename)
+        path = os.path.join(self.log_path, filename)
+        torch.save(self.net.state_dict(), path)
         
-        self.log_writer.write(text="Weights saved as {}".format(self.log_path + filename),
+        self.log_writer.write(text="Weights saved as {}".format(path),
                               verbose=verbose)
         
     def update_lr(self, metric, verbose=False):
@@ -119,13 +121,14 @@ class Solver():
 
         plt.title(model_name + ' MEAN AUROC: {}'.format(round(np.array(auc_list).mean(), 3)))
 
-        plt.savefig(self.log_path + filename)
+        path = os.path.join(self.log_path, filename)
+        plt.savefig(path)
         if show:
             plt.show()
             
         plt.close("all")
 
-        self.log_writer.write(text="ROC Plotted at {}".format(self.log_path + filename),
+        self.log_writer.write(text="ROC Plotted at {}".format(path),
                               verbose=verbose)
 
     def plot_loss(self, filename="loss.jpg", dpi=200, show=False, verbose=False):
@@ -145,13 +148,14 @@ class Solver():
 
         plt.legend(fontsize='x-small', loc='center right')
         
-        plt.savefig(self.log_path + filename)
+        path = os.path.join(self.log_path, filename)
+        plt.savefig(path)
         if show:
             plt.show()
             
         plt.close("all")
 
-        self.log_writer.write(text="Loss Plotted at {}".format(self.log_path + filename),
+        self.log_writer.write(text="Loss Plotted at {}".format(path),
                               verbose=verbose)
      
     def save_loss_csv(self, filename, verbose=False):
@@ -160,7 +164,8 @@ class Solver():
                            "Loss_val": self.loss_val_list,
                            "lr": self.lr_list})
         
-        df.to_csv(self.log_path + filename, index=False)
+        path = os.path.join(self.log_path, filename)
+        df.to_csv(path, index=False)
         
-        self.log_writer.write(text="Loss saved at {}".format(self.log_path + filename),
+        self.log_writer.write(text="Loss saved at {}".format(path),
                               verbose=verbose)

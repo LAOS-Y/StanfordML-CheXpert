@@ -54,7 +54,7 @@ class ChestXray14(Dataset):
         
     def __len__(self):
         return len(self.filenames)
-#         return 20
+#        return 20
 
     def __getitem__(self, index):
         name = self.filenames[index]

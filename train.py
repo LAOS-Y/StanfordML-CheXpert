@@ -8,6 +8,7 @@ import utils
 
 import argparse
 import yaml
+import shutil
 
 parser = argparse.ArgumentParser()
 parser.add_argument("config_path", help="path to the yml config file")
@@ -15,12 +16,14 @@ parser.add_argument("-v", "--verbose", help="verbosely print the process", actio
 args = parser.parse_args()
 
 yml_dict = yaml.load(open(args.config_path))
+config_filename = os.path.split(args.config_path)[-1]
+LOG_DIR = os.path.join(yml_dict["LOG_DIR"], config_filename.split('.')[0])
+os.mkdir(LOG_DIR)
+shutil.copy(args.config_path, os.path.join(LOG_DIR, config_filename)) 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = yml_dict["CUDA_VISIBLE_DEVICES"]
 
-LOG_DIR = yml_dict["LOG_DIR"]
-
-log_file = open(LOG_DIR + "log.txt", mode="a") 
+log_file = open(os.path.join(LOG_DIR, "log.txt"), mode="a") 
 
 log_writer = utils.LogWriter(log_file)
 
