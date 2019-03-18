@@ -53,8 +53,8 @@ class ChestXray14(Dataset):
         assert len(self.filenames) == len(self.label_list) 
         
     def __len__(self):
-#        return len(self.filenames)
-        return 20
+        return len(self.filenames)
+#         return 20
 
     def __getitem__(self, index):
         name = self.filenames[index]

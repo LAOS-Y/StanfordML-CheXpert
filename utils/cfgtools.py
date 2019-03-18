@@ -68,7 +68,7 @@ def getDataloader(ds_train, ds_val, dl_dict):
     
     return dl_train, dl_val
 
-def getClassifierInit(init_dict):
+def getIniter(init_dict):
     if init_dict["NAME"] == "kaiming_normal_":
         a = init_dict["A"]
         mode = init_dict["MODE"]
@@ -84,21 +84,23 @@ def getClassifierInit(init_dict):
         return lambda x: nn.init.xavier_normal_(x,
                                                 gain=gain)
     else:
-        assert False, "wrong CLASSIFIER_INIT name: {}".format(model_dict["NAME"])
+        assert False, "wrong INITER name: {}".format(model_dict["NAME"])
 
 def getModel(model_dict):
     name = model_dict["NAME"]
     num_class = model_dict["NUM_CLASS"]
     pretrained = model_dict["PRETRAINED"]
 
-    classifier_init = getClassifierInit(model_dict["CLASSIFIER_INIT"])
+    initer = getIniter(model_dict["INITER"])
 
     model_class_dict = {"Resnet50":model.Resnet50,
-                        "Densenet121":model.Densenet121}
+                        "Densenet121":model.Densenet121,
+                        "SEResnet50":model.SEResnet50,
+                        "SEDensenet121":model.SEDensenet121}
 
     net = model_class_dict[name](num_class=num_class,
                                  pretrained=pretrained,
-                                 classifier_init=classifier_init).cuda()
+                                 initer=initer).cuda()
 
     net = nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
     return net

@@ -7,7 +7,7 @@ from .seblock import SEBlock
 from collections import OrderedDict
 
 class Resnet50(nn.Module):
-    def __init__(self, num_class=14, pretrained=True, classifier_init=None, se_ratio=None):
+    def __init__(self, num_class=14, pretrained=True, initer=None, se_ratio=None):
         super(Resnet50, self).__init__()
         model = resnet50(pretrained)
 
@@ -31,10 +31,10 @@ class Resnet50(nn.Module):
         self.avgpool = model.avgpool
         self.classifier = nn.Linear(in_features=2048, out_features=num_class)
     
-        self.classifier_init = classifier_init
+        self.initer = initer
 
-        if self.classifier_init is not None:
-            self.classifier_init(self.classifier.weight)
+        if self.initer is not None:
+            self.initer(self.classifier.weight)
             
         self.se_ratio = se_ratio
         if self.se_ratio is not None:
@@ -44,19 +44,19 @@ class Resnet50(nn.Module):
         self.features.layer1 = SEBlock(self.features.layer1,
                                        channel=256,
                                        ratio=ratio,
-                                       initer=self.classifier_init)
+                                       initer=self.initer)
         self.features.layer2 = SEBlock(self.features.layer2,
                                        channel=512,
                                        ratio=ratio,
-                                       initer=self.classifier_init)
+                                       initer=self.initer)
         self.features.layer3 = SEBlock(self.features.layer3,
                                        channel=1024,
                                        ratio=ratio,
-                                       initer=self.classifier_init)
+                                       initer=self.initer)
         self.features.layer4 = SEBlock(self.features.layer4,
                                        channel=2048,
                                        ratio=ratio,
-                                       initer=self.classifier_init)
+                                       initer=self.initer)
             
     def forward(self, x):
         x = self.features(x)
@@ -67,5 +67,5 @@ class Resnet50(nn.Module):
 
         return x
     
-def SEResnet50(num_class=14, pretrained=True, classifier_init=None, se_ratio=4):
-    return Resnet50(num_class, pretrained, classifier_init, se_ratio)
+def SEResnet50(num_class=14, pretrained=True, initer=None, se_ratio=4):
+    return Resnet50(num_class, pretrained, initer, se_ratio)

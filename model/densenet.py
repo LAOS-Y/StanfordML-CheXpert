@@ -5,16 +5,16 @@ from torchvision.models import densenet121
 from .seblock import SEBlock
 
 class Densenet121(nn.Module):
-    def __init__(self, num_class=14, pretrained=True, classifier_init=None, se_ratio=None):
+    def __init__(self, num_class=14, pretrained=True, initer=None, se_ratio=None):
         super(Densenet121, self).__init__()
         model = densenet121(pretrained)
         self.features = model.features
         
         self.classifier = nn.Linear(in_features=1024, out_features=num_class)
-        self.classifier_init = classifier_init
+        self.initer = initer
         
-        if self.classifier_init is not None:
-            self.classifier_init(self.classifier.weight)
+        if self.initer is not None:
+            self.initer(self.classifier.weight)
             
         self.se_ratio = se_ratio
         if self.se_ratio is not None:
@@ -24,19 +24,19 @@ class Densenet121(nn.Module):
         self.features.denseblock1 = SEBlock(self.features.denseblock1,
                                             channel=256,
                                             ratio=ratio,
-                                            initer=self.classifier_init)
+                                            initer=self.initer)
         self.features.denseblock2 = SEBlock(self.features.denseblock2,
                                             channel=512,
                                             ratio=ratio,
-                                            initer=self.classifier_init)
+                                            initer=self.initer)
         self.features.denseblock3 = SEBlock(self.features.denseblock3,
                                             channel=1024,
                                             ratio=ratio,
-                                            initer=self.classifier_init)
+                                            initer=self.initer)
         self.features.denseblock4 = SEBlock(self.features.denseblock4,
                                             channel=1024,
                                             ratio=ratio,
-                                            initer=self.classifier_init)
+                                            initer=self.initer)
         
     
     def forward(self, x):
@@ -46,5 +46,5 @@ class Densenet121(nn.Module):
         out = self.classifier(out)
         return out
 
-def SEDensenet121(num_class=14, pretrained=True, classifier_init=None, se_ratio=4):
-    return Densenet121(num_class, pretrained, classifier_init, se_ratio)
+def SEDensenet121(num_class=14, pretrained=True, initer=None, se_ratio=4):
+    return Densenet121(num_class, pretrained, initer, se_ratio)
