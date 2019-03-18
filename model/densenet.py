@@ -2,23 +2,49 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import densenet121
+from .seblock import SEBlock
 
 class Densenet121(nn.Module):
-    def __init__(self, num_class=14, pretrained=True, classifier_init=None):
+    def __init__(self, num_class=14, pretrained=True, classifier_init=None, se_ratio=None):
         super(Densenet121, self).__init__()
         model = densenet121(pretrained)
         self.features = model.features
+        
         self.classifier = nn.Linear(in_features=1024, out_features=num_class)
-
         self.classifier_init = classifier_init
-
+        
         if self.classifier_init is not None:
             self.classifier_init(self.classifier.weight)
+            
+        self.se_ratio = se_ratio
+        if self.se_ratio is not None:
+            self._features2SEBlock(self.se_ratio)
+    
+    def _features2SEBlock(self, ratio):
+        self.features.denseblock1 = SEBlock(self.features.denseblock1,
+                                            channel=256,
+                                            ratio=ratio,
+                                            initer=self.classifier_init)
+        self.features.denseblock2 = SEBlock(self.features.denseblock2,
+                                            channel=512,
+                                            ratio=ratio,
+                                            initer=self.classifier_init)
+        self.features.denseblock3 = SEBlock(self.features.denseblock3,
+                                            channel=1024,
+                                            ratio=ratio,
+                                            initer=self.classifier_init)
+        self.features.denseblock4 = SEBlock(self.features.denseblock4,
+                                            channel=1024,
+                                            ratio=ratio,
+                                            initer=self.classifier_init)
+        
     
     def forward(self, x):
         features = self.features(x)
-        out = F.relu(features, inplace=True)
+        out = nn.ReLU(inplace=True)(features)
         out = nn.AdaptiveAvgPool2d(1)(out).view(features.size(0), -1)
-        #out = F.avg_pool2d(out, kernel_size=7, stride=1).view(features.size(0), -1)
         out = self.classifier(out)
         return out
+
+def SEDensenet121(num_class=14, pretrained=True, classifier_init=None, se_ratio=4):
+    return Densenet121(num_class, pretrained, classifier_init, se_ratio)
