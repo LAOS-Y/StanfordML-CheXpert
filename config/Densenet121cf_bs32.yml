@@ -1,13 +1,27 @@
 MODEL:
-  NAME: "Resnet50"
-  NUM_CLASS: 14
-  PRETRAINED: True
+  - NAME: "Densenet121"
+    NUM_CLASS: 14
+    PRETRAINED: True
+    WEIGHT_PATH: "weight/Densenet121_kmnormal_bs32.th"
+    FREEZE: True
 
-  INITER:
-    NAME: "kaiming_normal_"
-    A: 0
-    MODE: 'fan_in'
-    NONLINEARITY: 'leaky_relu'
+    INITER:
+      NAME: "kaiming_normal_"
+      A: 0
+      MODE: 'fan_in'
+      NONLINEARITY: 'leaky_relu'
+
+  - NAME: "ClassFusion"
+    NUM_CLASS: 14
+    IN_C: 14
+    H_C: 6
+    FREEZE: False 
+    
+    INITER:
+      NAME: "kaiming_normal_"
+      A: 0
+      MODE: 'fan_in'
+      NONLINEARITY: 'leaky_relu'
 
 DATASET:
   - NAME: "ChestXray-NIHCC"
@@ -60,8 +74,8 @@ SCHEDULER:
   MIN_LR: 0
   EPS: 1.e-08
 
-CUDA_VISIBLE_DEVICES: "0,1,2,3"
+CUDA_VISIBLE_DEVICES: "4,5,6,7"
 
 LOG_DIR: "train_log"
 
-NUM_EPOCH: 50
+NUM_EPOCH: 500

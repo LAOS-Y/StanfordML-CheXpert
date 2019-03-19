@@ -8,6 +8,7 @@ import torchvision.transforms as transforms
 
 from .data import *
 import model
+from collections import OrderedDict
 
 def getTrm(trm_dict):
     if trm_dict["TYPE"] == "ColorJitter":
@@ -86,21 +87,48 @@ def getIniter(init_dict):
     else:
         assert False, "wrong INITER name: {}".format(model_dict["NAME"])
 
-def getModel(model_dict):
+def getSingleModel(model_dict):
+    backbone_class_dict = {"Resnet50":model.Resnet50,
+                           "Densenet121":model.Densenet121,
+                           "SEResnet50":model.SEResnet50,
+                           "SEDensenet121":model.SEDensenet121}
+
     name = model_dict["NAME"]
-    num_class = model_dict["NUM_CLASS"]
-    pretrained = model_dict["PRETRAINED"]
+    
+    if name in backbone_class_dict:
+        num_class = model_dict["NUM_CLASS"]
+        pretrained = model_dict["PRETRAINED"]
+        initer = getIniter(model_dict["INITER"])
 
-    initer = getIniter(model_dict["INITER"])
+        net = backbone_class_dict[name](num_class=num_class,
+                                        pretrained=pretrained,
+                                        initer=initer)
+    elif name == "ClassFusion":
+        num_class = model_dict["NUM_CLASS"]
+        in_c = model_dict["IN_C"]
+        h_c = model_dict["H_C"]
+        initer = getIniter(model_dict["INITER"])
 
-    model_class_dict = {"Resnet50":model.Resnet50,
-                        "Densenet121":model.Densenet121,
-                        "SEResnet50":model.SEResnet50,
-                        "SEDensenet121":model.SEDensenet121}
+        net = model.ClassFusion(num_class=num_class,
+                          in_c=in_c,
+                          h_c=h_c,
+                          initer=initer)
+    else:
+        assert False, "wrong Model name: {}".format(name)
 
-    net = model_class_dict[name](num_class=num_class,
-                                 pretrained=pretrained,
-                                 initer=initer).cuda()
+    if "WEIGHT_PATH" in model_dict:
+        weight_path = model_dict["WEIGHT_PATH"]
+        net.load_state_dict(torch.load(weight_path))
+
+    if model_dict["FREEZE"]:
+        for param in net.parameters():
+            param.requires_grad = False
+    return net.cuda()
+
+def getModel(model_dicts):
+    models = OrderedDict([(model_dict["NAME"], getSingleModel(model_dict)) for model_dict in model_dicts])
+
+    net = nn.Sequential(models)
 
     net = nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
     return net

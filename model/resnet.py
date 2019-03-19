@@ -3,10 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet50
 from .seblock import SEBlock
-
+from .backbone import Backbone
 from collections import OrderedDict
 
-class Resnet50(nn.Module):
+class Resnet50(Backbone):
     def __init__(self, num_class=14, pretrained=True, initer=None, se_ratio=None):
         super(Resnet50, self).__init__()
         model = resnet50(pretrained)

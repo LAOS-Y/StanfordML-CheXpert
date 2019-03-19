@@ -3,8 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import densenet121
 from .seblock import SEBlock
+from .backbone import Backbone
 
-class Densenet121(nn.Module):
+class Densenet121(Backbone):
     def __init__(self, num_class=14, pretrained=True, initer=None, se_ratio=None):
         super(Densenet121, self).__init__()
         model = densenet121(pretrained)
