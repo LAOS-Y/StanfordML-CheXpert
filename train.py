@@ -10,6 +10,8 @@ import argparse
 import yaml
 import shutil
 
+from functools import reduce
+
 parser = argparse.ArgumentParser()
 parser.add_argument("config_path", help="path to the yml config file")
 parser.add_argument("-v", "--verbose", help="verbosely print the process", action="store_true")
@@ -52,6 +54,8 @@ solver = utils.Solver(net, dl_train, dl_val, loss_fn, optimizer, scheduler, LOG_
 log_writer.write(text="Start training",
                  verbose=args.verbose)
 
+model_name = reduce(lambda x, y:x + y, [model["NAME"] + '-' for model in yml_dict["MODEL"]])[:-1]
+
 for i in range(NUM_EPOCH): 
     log_writer.write(text="Epoch#{}/{}:".format(i + 1, NUM_EPOCH),
                      verbose=args.verbose)
@@ -61,7 +65,7 @@ for i in range(NUM_EPOCH):
     
     if solver.loss_val_list[-1] <= min(solver.loss_val_list):
         solver.save_model("Epoch#{}.th".format(i + 1), verbose=args.verbose)
-        solver.plot_roc("roc.jpg", model_name=yml_dict["MODEL"]["NAME"], verbose=args.verbose)
+        solver.plot_roc("roc.jpg", model_name=model_name, verbose=args.verbose)
     
     solver.update_lr(metric=solver.loss_val_list[-1],
                      verbose=args.verbose)
